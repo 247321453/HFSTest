@@ -37,6 +37,8 @@ namespace HFSTest
         public static bool Test(byte[] buffer)
         {
             var serpent = new HFSSerpent();
+            //Now we need to guess about this key
+            //If the key is correct, then the following test can pass
             serpent.SetKey(HFSUtils.GenerateEncodingKey((NAME.ToLower() + "MBHEROES!@0u9").ToCharArray()));
             serpent.Decrypt(buffer);
             using (var ms = new MemoryStream(buffer))
@@ -62,7 +64,8 @@ namespace HFSTest
         }
         public static void Main(string[] args)
         {
-            Test(OLD);
+            Test(OLD);//good
+            Test(NEW);//bad
         }
     }
 }
