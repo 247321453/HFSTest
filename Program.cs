@@ -82,7 +82,8 @@ namespace HFSTest
         public static void Main(string[] args)
         {
             Test(OLD);//good
-            var random = new Random((int)(TimeUtil.GetCurrentTimeMillis() / 100));
+            //crack sosemanuk
+            var random = new Random((int)(TimeUtil.GetCurrentTimeMillis() & 0xFFFFFFFF));
             Crack(random, 3, "MBHEROES!@", POOL2);
         }
 
