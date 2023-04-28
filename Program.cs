@@ -1,5 +1,6 @@
 ﻿using HFSExtract;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -34,12 +35,12 @@ namespace HFSTest
 
         private static string NAME = "FE3FAA5BC9499699F9B75973D8997CF05C54ABE1_00002.hfs";
 
-        public static bool Test(byte[] buffer)
+        public static bool Test(byte[] buffer, string key = "MBHEROES!@0u9")
         {
             var serpent = new HFSSerpent();
             //Now we need to guess about this key
             //If the key is correct, then the following test can pass
-            serpent.SetKey(HFSUtils.GenerateEncodingKey((NAME.ToLower() + "MBHEROES!@0u9").ToCharArray()));
+            serpent.SetKey(HFSUtils.GenerateEncodingKey((NAME.ToLower() + key).ToCharArray()));
             serpent.Decrypt(buffer);
             using (var ms = new MemoryStream(buffer))
             {
@@ -48,24 +49,55 @@ namespace HFSTest
                     int resourceNameLength = marshal.ReadInt32();
                     if (resourceNameLength < 0 || resourceNameLength > 127)
                     {
-                        Console.WriteLine("resourceNameLength is bad!");
+                        //Console.WriteLine("resourceNameLength is bad!");
                         return false;
                     }
                     var resourceName = Encoding.Unicode.GetString(marshal.ReadBytes(resourceNameLength * 2));//128*2
                     if (resourceName != "models/player/_anim/female/evy/pc_evy_transformation.txt")
                     {
-                        Console.WriteLine("resourceName is bad!");
+                       // Console.WriteLine("resourceName is bad!");
                         return false;
                     }
                 }
             }
-            Console.WriteLine("good!");
+            //Console.WriteLine("good!");
             return true;
+        }
+        private static char[] pool = "~!@#$%^&*()_+0123456789.-= abcdefghijklmnopqrstuvwxyz".ToCharArray();
+        private static string GenRandomKey(Random random, List<string> useList)
+        {
+            string ret = null;
+            int size = 5;
+            int N = pool.Length;
+            char[] cs = new char[size];
+            do
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    cs[i] = pool[random.Next(0, N)];
+                }
+                ret = new string(cs);
+            }
+            while (useList.Contains(ret));
+            useList.Add(ret);
+            return ret;
         }
         public static void Main(string[] args)
         {
             Test(OLD);//good
-            Test(NEW);//bad
+            var random = new Random(20230428);
+            var useList = new List<string>();
+            string pwd = GenRandomKey(random, useList);
+            while (true)
+            {
+               // Console.WriteLine(pwd);
+                if (Test(NEW, "MBHEROES" + pwd))
+                {
+                    Console.WriteLine("Password is good:" + pwd);
+                    break;
+                }
+                pwd = GenRandomKey(random, useList);
+            }
         }
     }
 }
