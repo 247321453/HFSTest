@@ -36,17 +36,24 @@ namespace HFSTest
 
         private static string NAME = "FE3FAA5BC9499699F9B75973D8997CF05C54ABE1_00002.hfs";
 
-        public static bool Test(byte[] buffer, string key = "MBHEROES!@0u9", bool debug = true)
+        public static bool Test(byte[] buffer, string key, bool debug = true)
         {
+            //sosemanuk crypt
             var serpent = new HFSSerpent();
             //Now we need to guess about this key
             //If the key is correct, then the following test can pass
-            serpent.SetKey(HFSUtils.GenerateEncodingKey((NAME.ToLower() + key).ToCharArray()));
+            var keyBytes = HFSUtils.GenerateEncodingKey(key.ToCharArray());
+            serpent.SetKey(keyBytes);
             serpent.Decrypt(buffer);
             using (var ms = new MemoryStream(buffer))
             {
                 using (var marshal = new BinaryReader(ms))
                 {
+                    if(marshal.ReadByte() != 56)
+                    {
+                        return false;
+                    }
+                    marshal.BaseStream.Position = 0;
                     int resourceNameLength = marshal.ReadInt32();
                     if (resourceNameLength < 0 || resourceNameLength > 127)
                     {
@@ -81,10 +88,23 @@ namespace HFSTest
         }
         public static void Main(string[] args)
         {
-            Test(OLD);//good
-            //crack sosemanuk
-            var random = new Random((int)(TimeUtil.GetCurrentTimeMillis() & 0xFFFFFFFF));
-            Crack(random, 3, "MBHEROES!@", POOL2);
+            //old test
+            //Test(OLD, NAME.ToLower() + "MBHEROES!@0u9") == true;
+            //Test(New, {real passowrd}) == true;
+            Console.WriteLine(Test2(NAME.ToLower() + "MBHEROES!@0u9", (uint)4033892311));//old
+            Console.WriteLine(Test2(NAME.ToLower() + "MBHEROES00000", (uint)1053629760L));//new
+        }
+
+        public static bool Test2(string key, uint result)
+        {
+            var serpent = new HFSSerpent();
+            //Now we need to guess about this key
+            //If the key is correct, then the following test can pass
+            var keyBytes = HFSUtils.GenerateEncodingKey(key.ToCharArray());
+            serpent.SetKey(keyBytes);
+            serpent.UpdateStreamKeys();
+            return serpent.KS[0] == result;
+            //Console.WriteLine(serpent.KS[0]);
         }
 
         private static void Crack(Random random, int N , string prefix, char[] pool)

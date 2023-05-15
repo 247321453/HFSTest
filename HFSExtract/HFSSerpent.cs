@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common;
+using System;
 
 namespace HFSExtract
 {
@@ -9,7 +10,7 @@ namespace HFSExtract
 
         private byte[] Key { get; } = new byte[128];
         private uint[] SW { get; } = new uint[16];
-        private uint[] KS { get; } = new uint[16];
+        public uint[] KS { get; } = new uint[16];
         private uint R1 { get; set; }
         private uint R2 { get; set; }
         private int KeyIndex { get; set; }
@@ -60,7 +61,7 @@ namespace HFSExtract
             Round = 16;
         }
 
-        private void UpdateStreamKeys()
+        public void UpdateStreamKeys()
         {
             for (var j = 0; j < 16; j++)
             {
@@ -87,12 +88,20 @@ namespace HFSExtract
                 }
 
                 var offset = i * BLOCK_ITER;
+               // Console.WriteLine("offset=" + offset);
 
-
+                //4033892367-4033892311=56
+                //1053629816-x=56 KS[0] = 1053629760
                 var value = BitConverter.ToUInt32(buffer, offset + start);
-                value -= KS[KeyIndex++ % 16];
+               // Console.WriteLine("value1=" + value+", bytes="+ buffer.ToHexString(offset+start, 4));
+                int target = KeyIndex++ % 16;
+                value -= KS[target];
+                ///Console.WriteLine("KS["+ target + "]="+ KS[target]);
+                
                 byte[] tmp = BitConverter.GetBytes(value);
+                //Console.WriteLine("value2=" + value+", bytes="+tmp.ToHexString());
                 Array.Copy(tmp, 0, buffer, offset + start, tmp.Length);
+              //  Console.ReadKey();
             }
         }
     }
